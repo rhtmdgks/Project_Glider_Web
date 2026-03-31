@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model UserProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  displayName   String
+  email         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  addresses     Address[]
+  paymentMethods PaymentMethod[]
+  voicePreference VoicePreference?
+  accessibilityPreference AccessibilityPreference?
+  orders        VirtualOrder[]
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  userId     String
+  label      String
+  fullAddress String
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model PaymentMethod {
+  id          String   @id @default(cuid())
+  userId      String
+  methodName  String
+  maskedValue String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model VoicePreference {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  voiceStyle String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model AccessibilityPreference {
+  id            String   @id @default(cuid())
+  userId         String   @unique
+  largeText      Boolean  @default(false)
+  highContrast   Boolean  @default(false)
+  simplifiedMode Boolean  @default(true)
+  voiceFeedback  Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model VirtualOrder {
+  id                  String   @id @default(cuid())
+  orderId             String   @unique
+  userId              String
+  productId           String
+  productNameSnapshot String
+  quantity            Int
+  selectedOptions     String
+  merchantName        String
+  status              String
+  eta                 String
+  totalAmount         Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  payment             VirtualPayment?
+  deliveryEvents      DeliveryTrackingEvent[]
+}
+
+model VirtualPayment {
+  id          String   @id @default(cuid())
+  orderId     String   @unique
+  paymentMethod String
+  status      String
+  paidAmount  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  order       VirtualOrder @relation(fields: [orderId], references: [orderId], onDelete: Cascade)
+}
+
+model DeliveryTrackingEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  status    String
+  message   String
+  createdAt DateTime @default(now())
+  order     VirtualOrder @relation(fields: [orderId], references: [orderId], onDelete: Cascade)
+}
